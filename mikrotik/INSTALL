@@ -1,0 +1,216 @@
+Tested with latest RouterOS 6.46.x.
+###################################
+
+1. On your MikroTik you must configure SNMPv3:
+
+/snmp community
+set [ find default=yes ] disabled=yes
+add addresses=11.22.33.44/32 authentication-password=PASSWORD-AUTH authentication-protocol=SHA1 comment="Nagios Server" encryption-password=PASSWORD-ENCRYPT encryption-protocol=AES name=monitoring security=private
+/snmp
+set contact=YOUR@Email.com enabled=yes location=YOURLocation trap-community=monitoring trap-version=3
+
+!!! where 11.22.33.44/32 is your nagios server ip address !!!
+
+# --------------------------------------------------------------------
+
+2. In Nagios Server you must:
+
+2.1. Upload scripts in libexec directory
+
+2.2. Define commands:
+
+# --------------------------------------------------------------------
+# 'check_mikrotik_mem' command definition
+define command {
+        command_name check_mikrotik_mem
+        command_line $USER1$/check_mikrotik_mem -H $HOSTADDRESS$ $ARG1$
+} 
+
+# 'check_mikrotik_wifi_signal' command definition
+define command {
+        command_name check_mikrotik_wifi_signal
+        command_line $USER1$/check_mikrotik_wifi_signal -H $HOSTADDRESS$ $ARG1$
+} 
+
+# 'check_mikrotik_wifi_clients' command definition
+define command {
+        command_name check_mikrotik_wifi_clients
+        command_line $USER1$/check_mikrotik_wifi_clients -H $HOSTADDRESS$ $ARG1$
+} 
+
+# 'check_mikrotik_temperature' command definition
+define command {
+        command_name check_mikrotik_temperature
+        command_line $USER1$/check_mikrotik_temperature -H $HOSTADDRESS$ $ARG1$
+}
+
+# 'check_mikrotik_voltage' command definition
+define command {
+        command_name check_mikrotik_voltage
+        command_line $USER1$/check_mikrotik_voltage -H $HOSTADDRESS$ $ARG1$
+}
+
+# 'check_mikrotik_load' command definition
+define command {
+        command_name check_mikrotik_load
+        command_line $USER1$/check_mikrotik_load -H $HOSTADDRESS$ $ARG1$
+}
+
+# 'check_mikrotik_uptime' command definition
+define command {
+        command_name check_mikrotik_uptime
+        command_line $USER1$/check_mikrotik_uptime -H $HOSTADDRESS$ $ARG1$
+}
+
+
+# 'check_mikrotik_updates' command definition
+define command {
+        command_name check_mikrotik_updates
+        command_line $USER1$/check_mikrotik_updates -H $HOSTADDRESS$ $ARG1$
+}
+
+# 'check_mikrotik_disk' command definition
+define command {
+        command_name check_mikrotik_disk
+        command_line $USER1$/check_mikrotik_disk -H $HOSTADDRESS$ $ARG1$
+}
+
+
+2.3. Define Host and service for host:
+# --------------------------------------------------------------------
+
+define host {
+        use                             generic-host
+        host_name                       xxxx
+        alias                           XXXX
+        address                         44.33.22.11
+        check_command                   check-host-alive
+        max_check_attempts              5
+        notification_period             24x7
+        notification_options            d,u,r
+}
+
+define service {
+        use                             generic-service         
+        host_name                       xxxx
+        service_description             PING
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_ping!100.0,20%!500.0,60%
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             LOAD
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_mikrotik_load!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+define service {
+        use                             generic-service         
+        host_name                       xxxx
+        service_description             SSH
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_ssh!-p123456
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             MEMORY
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_mikrotik_mem!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             WIFI Signal
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_mikrotik_wifi_signal!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             WIFI Clients
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_mikrotik_wifi_clients!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             TEMPERATURE
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_mikrotik_temperature!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             VOLTAGE
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxx
+        check_command                   check_mikrotik_voltage!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             UPTIME
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxxx
+        check_command                   check_mikrotik_uptime!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             FIRMWARE
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxx
+        check_command                   check_mikrotik_updates!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+define service {
+        use                             generic-service
+        host_name                       xxxx
+        service_description             HDD
+        check_interval                  1
+        max_check_attempts              5
+        contact_groups                  xxx
+        check_command                   check_mikrotik_disk!-P 3 -C $USER3$ -L authPriv -U $USER3$ -a SHA -A $USER4$ -x AES -X $USER5$
+}
+
+2.4. Define $USER3$ $USER4$ and $USER5 in resource.cfg:
+
+# --------------------------------------------------------------------
+# SNMP Community Name
+$USER3$=monitoring
+# SNMP Authentication Password
+$USER4$=PASSWORD-AUTH
+# SNMP Encryption Password
+$USER5$=PASSWORD-ENCRYPT
+
+3. Thats it. ;>
+
