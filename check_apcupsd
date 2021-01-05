@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# check_apcupsd 1.3
+# check_apcupsd 1.4
 # Nagios plugin to monitor APC Smart-UPSes using apcupsd (with graphs for pnp4nagios)
 #
 # Copyright (c) 2008 Martin Toft <mt@martintoft.dk>
