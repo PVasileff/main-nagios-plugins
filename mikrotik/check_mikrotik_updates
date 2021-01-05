@@ -1,0 +1,228 @@
+#!/bin/bash
+#
+# Plamen Vasilev a.k.a Paco - p.vasileff@gmail.com
+# Based on check_mikrorik_mem from Jakub Zemanek - zemanekj@vspj.cz
+# Used part of code from: https://github.com/x70b1/check_routeros-upgrade/
+#
+
+PROGNAME=`basename $0`
+PROGPATH=`dirname $0`
+REVISION=`echo '$Revision: 2.0 $' | sed -e 's/[^0-9.]//g'`
+
+
+. $PROGPATH/utils.sh
+
+print_usage() {
+    echo -e "Usage: $PROGNAME -H <ip_address> [-w <number>] [-c <number>] [-C <community>]
+[-P <snmp version>] [-U <username>] [-L <secLevel>] [-a <authproto>]
+[-x <privproto>] [-A <authpassword>] [-X <privpassword>]"
+    echo -e "\nOptions:"
+    echo -e " -V, --version\n    Print version information"
+    echo -e " -h, --help\n    Print detailed help screen"
+    echo -e " -H, --hostname=ADDRESS\n    Host name od IP address"
+    echo -e " -C, --community=STRING\n    Optional community string for SNMP communication (default is public)"
+    echo -e " -P, --protocol=[1|2c|3]\n    SNMP protocol version(default is 2c)"
+    echo -e " -L, --seclevel=[noAuthNoPriv|authNoPriv|authPriv]\n    SNMPv3 securityLevel"
+    echo -e " -a, --authproto=[MD5|SHA]\n    SNMPv3 auth proto"
+    echo -e " -x, --privproto=[DES|AES]\n    SNMPv3 priv proto"
+    echo -e " -U, --secname=USERNAME\n    SNMPv3 username"
+    echo -e " -A, --authpassword=PASSWORD\n    SNMPv3 authentication password"
+    echo -e " -X, --privpassword=PASSWORD\n    SNMPv3 privacy password"
+
+echo "
+This plugin uses the 'snmpget' and 'snmpwalk' command included with the NET-SNMP package.
+if you don't have the package installed, you will need to download it from
+http://net-snmp.sourceforge.net before you can use this plugin."
+}
+
+print_help() {
+    print_revision $PROGNAME $REVISION
+    echo ""
+    echo "This plugin checks current mikrotik routeros version and compare with last stable released version on mikrotik website"
+    echo ""
+    print_usage
+    echo ""
+    support
+}
+
+#Set default values
+community=""
+protocol=""
+secname=""
+authproto=""
+privproto=""
+privpasswd=""
+authpassword=""
+
+#Process parameters
+while test -n "$1"; do
+	case "$1" in
+			--help)
+			    print_help
+			    exit $STATE_OK
+			    ;;
+			-h)
+			    print_help
+			    exit $STATE_OK
+			    ;;
+			--version)
+			    print_revision $PROGNAME $REVISION
+			    exit $STATE_OK
+			    ;;
+			-V)
+			    print_revision $PROGNAME $REVISION
+			    exit $STATE_OK
+			    ;;
+			-H)
+			    Host=" $2"
+			    shift
+			    ;;
+			--hostname*)
+			    Host=" $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-C)
+			    community=" -c $2"
+			    shift
+			    ;;
+			--community*)
+			    community=" -c $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-P)
+			    protocol=" -v $2"
+			    shift
+			    ;;
+			--protocol*)
+			    protocol=" -v $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-U)
+			    secname=" -u $2"
+			    shift
+			    ;;
+			--secname*)
+			    secname=" -u $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-a)
+			    authproto=" -a $2"
+			    shift
+			    ;;
+			--authproto*)
+			    authproto=" -a $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-x)
+			    privproto=" -x $2"
+			    shift
+			    ;;
+			--privproto*)
+			    privproto=" -x $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-A)
+			    authpassword=" -A $2"
+			    shift
+			    ;;
+			--authpassword*)
+			    authpassword=" -A $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-X)
+			    privpasswd=" -X $2"
+			    shift
+			    ;;
+			--privpassword*)
+			    privpasswd=" -X $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-L)
+			    seclevel=" -l $2"
+			    shift
+			    ;;
+			--seclevel*)
+			    seclevel=" -l $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+
+			*)
+			    echo "Unknown argument: $1"
+			    echo "Usage: $PROGNAME --help"
+			    exit $STATE_UNKNOWN
+			    ;;
+	esac
+	shift
+done
+
+#Host is not optional
+if [ "$Host" == "" ]; then
+    exit $STATE_UNKNOWN
+fi
+
+
+#Set default values
+if [ "$protocol" == "" ]; then
+    protocol=" -v 2c"
+    community=" -c public"
+fi
+
+firmwareversion=$(snmpwalk $community$authproto$authpassword$privpasswd$protocol$secname$seclevel$privproto $Host .1.3.6.1.4.1.14988.1.1.4.4.0)
+if [ $? -ne "0" ] ; then
+    exit $STATE_CRITICAL
+fi
+
+routerosmodel=$(snmpget $community$authproto$authpassword$privpasswd$protocol$secname$seclevel$privproto -Oqv $Host .1.3.6.1.2.1.1.1.0)
+if [ $? -ne "0" ] ; then
+    exit $STATE_CRITICAL
+fi
+
+rbosmodel=$(echo $routerosmodel | cut -d ':' -f2 | tr -d '"')
+
+if [ -z "${ROUTEROS_UPDATEURL}" ]; then
+    routeros_url="https://download.mikrotik.com/routeros"
+else
+    routeros_url="${ROUTEROS_UPDATEURL}"
+fi
+
+
+routeros_installed=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"')
+## - TESTS -routeros_installed="6.45.3"
+param_version=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"' | cut -d '.' -f1)
+## - TESTS - param_version=$(echo $routeros_installed | cut -d '.' -f1)
+major_version=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"' | cut -d '.' -f2)
+
+# Checking Mikrotik Website for new version release
+if ! routeros_available=$(curl -fsA "check_routeros-upgrade" "$routeros_url/LATEST.$param_version"); then
+	echo "Could not reach the MikroTik server to check the latest version!"
+	exit 1
+fi
+
+routeros_available_version=$(echo "$routeros_available" | cut -d " " -f 1)
+routeros_available_releasedate=$(echo "$routeros_available" | cut -d " " -f 2)
+
+# Compare Latest version from MikrkoTik Website with version installed on device
+if [ "$routeros_available_version" = "$routeros_installed" ]; then
+	echo "Your $rbosmodel version: $routeros_available_version is up to date (release: $(date -u -d @"$routeros_available_releasedate" +'%b-%d')) | firmware=$major_version"
+	exit 0
+else
+	 # read the changelog from MikroTik website
+        if ! changelog=$(curl -fsA "check_routeros-upgrade" "$routeros_url/$routeros_available_version/CHANGELOG"); then
+            echo "Could not reach the MikroTik WebSite to read the changelog!"
+            exit 1
+        fi
+
+        changelog_lines=$(echo "$changelog" | grep -n "What" | head -n 2 | tail -n 1 | cut -d ":" -f 1)
+
+        changelog_impfix=$(echo "$changelog" | head -n "$changelog_lines" | grep -c '!)')
+        changelog_avgfix=$(echo "$changelog" | head -n "$changelog_lines" | grep -c '[*])')
+
+        if [ "$changelog_impfix" -ne 0 ] && [ "$changelog_avgfix" -ne 0 ]; then
+            fix_text="$changelog_impfix important fixes, $changelog_avgfix average fixes"
+            fix_result=2
+        elif [ "$changelog_impfix" -ne 0 ]; then
+            fix_text="$changelog_impfix important fixes"
+            fix_result=2
+        elif [ "$changelog_avgfix" -ne 0 ]; then
+            fix_text="$changelog_avgfix average fixes"
+            fix_result=1
+        fi
+
+        echo "Your $rbosmodel version: $routeros_installed is upgradable to $routeros_available_version ($fix_text) | firmware=$major_version"
+        exit $fix_result
+    fi
+else
+    echo "$error"
+    exit 2
+fi
