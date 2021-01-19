@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # check_apcupsd 1.4
-# Nagios plugin to monitor APC Smart-UPSes using apcupsd (with graphs for pnp4nagios)
+# Nagios plugin to monitor APC Smart-UPSes using apcupsd (pnp4nagios compatible)
 #
 # Copyright (c) 2008 Martin Toft <mt@martintoft.dk>
 # Copyright (c) 2020 Plamen Vasilev <p.vasileff@gmail.com>
@@ -19,49 +19,58 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 #
-# Example configuration
+# Example configuration if you running check directly on nagios server (using localhost)
 #
 # commands.cfg:
 #
 # define command {
-#         command_name check_apcupsd
-#         command_line $USER1$/check_apcupsd -w $ARG2$ -c $ARG3$ $ARG1$
-#         }
-# 
-# define command {
-#         command_name check_apcupsd_no_notify
-#         command_line $USER1$/check_apcupsd $ARG1$
-#         }
+#        command_name    check_custom_apcupsd
+#        command_line    $USER1$/check_apcupsd -h $ARG1$ -w $ARG2$ -c $ARG3$ $ARG4$
+#}
+
+# localhost.cfg:
 #
-# ups1.cfg:
+#define service {
+# BATTERY CHARGE
 #
-# define service {
-#         use generic-service
-#         host_name ups1
-#         service_description CHARGE
-#         check_command check_apcupsd!bcharge!95!50
-#         }
-# 
-# define service {
-#         use generic-service
-#         host_name ups1
-#         service_description TEMP
-#         check_command check_apcupsd!itemp!35!40
-#         }
-# 
-# define service {
-#         use generic-service
-#         host_name ups1
-#         service_description LOAD
-#         check_command check_apcupsd!loadpct!70!85
-#         }
-# 
-# define service {
-#         use generic-service
-#         host_name ups1
-#         service_description TIMELEFT
-#         check_command check_apcupsd_no_notify!timeleft
-#         }
+#        use                     local-service
+#        host_name               localhost
+#        service_description     UPS - YOUR_UPS_NAME - Battery Charge
+#        check_interval          1
+#        max_check_attempts      5
+#        check_command           check_custom_apcupsd!IP-OF-REMOTE-APCUPSD-DAEMON!70!50!bcharge
+#}
+#define service {
+# TIMELEFT
+#
+#        use                     local-service
+#        host_name               localhost
+#        service_description     UPS - YOUR_UPS_NAME - Runtime on battery
+#        check_interval          1
+#        max_check_attempts      5
+#        check_command           check_custom_apcupsd!IP-OF-REMOTE-APCUPSD-DAEMON!11!9!timeleft
+#}
+#define service {
+# LOAD
+#
+#        use                     local-service
+#        host_name               localhost
+#        service_description     UPS - YOUR_UPS_NAME - Load
+#        check_interval          1
+#        max_check_attempts      5
+#        check_command           check_custom_apcupsd!pve!60!70!loadpct
+#}
+#define service {
+# INPUT VOLTAGE
+#
+#        use                     local-service
+#        host_name               localhost
+#        service_description     UPS - YOUR_UPS_NAME - Input Voltage
+#        check_interval          1
+#        max_check_attempts      5
+#        check_command           check_custom_apcupsd!pve!220!210!linev
+#}
+
 
 APCACCESS=/sbin/apcaccess
 
@@ -69,16 +78,17 @@ usage()
 {
 	echo "usage: check_apcupsd [-c critical_value] [-h hostname] [-p port]"
 	echo -n "                     [-w warning_value] "
-	echo "<bcharge|itemp|loadpct|timeleft>"
+	echo "<bcharge|itemp|loadpct|timeleft|linev>"
 	echo
 	echo "hostname and port defaults to localhost and 3551, respectively."
 	echo
 	echo "checks:"
 	echo "    bcharge  = battery charge, measured in percent."
 	echo "    itemp    = internal temperature, measured in degree Celcius."
+        echo "    linev    = line input voltage of ups (note: implemented logic of that is if input voltage is low)"
 	echo "    loadpct  = load percent, measured in percent (do'h!)."
-	echo "    timeleft = time left with current battery charge and load,"
-	echo "               measured in minutes."
+	echo "    timeleft = time left with current battery charge and load, measured in minutes."
+	echo
 	exit 3
 }
 
@@ -112,7 +122,7 @@ while [ $OPTIND -gt 1 ]; do
 done
 
 if [ "$ARG" != "bcharge" -a "$ARG" != "itemp" -a "$ARG" != "loadpct" \
-	-a "$ARG" != "timeleft" ]; then
+	-a "$ARG" != "timeleft" -a "$ARG" != "linev" ]; then
 	usage
 fi
 
@@ -132,7 +142,7 @@ if [ "$CRITVAL" != "" -a "`echo $CRITVAL | grep '^[0-9][0-9]*$'`" = "" ]; then
 fi
 
 if [ "$WARNVAL" != "" -a "$CRITVAL" != "" ]; then
-	if [ "$ARG" = "bcharge" -o "$ARG" = "timeleft" ]; then
+	if [ "$ARG" = "bcharge" -o "$ARG" = "timeleft" -o "$ARG" = "linev" ]; then
 		if [ $WARNVAL -le $CRITVAL ]; then
 			echo "Error: warning_value must be greater than critical_value!"
 			exit 3
@@ -140,7 +150,7 @@ if [ "$WARNVAL" != "" -a "$CRITVAL" != "" ]; then
 	else
 		if [ $WARNVAL -ge $CRITVAL ]; then
 			echo "Error: warning_value must be less than critical_value!"
-			exit 3
+				exit 3
 		fi
 	fi
 fi
@@ -224,6 +234,21 @@ timeleft)
 	fi
 	echo "OK - Time Left: $VALUE Minutes | timeleft=$VALUE;$WARNVAL;$CRITVAL"
 	;;
+linev)
+        if [ "$CRITVAL" != "" ]; then
+                if [ $ROUNDED -lt $CRITVAL ]; then
+                        echo "CRITICAL - Input Voltage: ${VALUE}V | inputvoltage=$VALUE;$WARNVAL;$CRITVAL"
+                        exit 2
+                fi
+        fi
+        if [ "$WARNVAL" != "" ]; then
+                if [ $ROUNDED -lt $WARNVAL ]; then
+                        echo "WARNING - Input Voltage:: ${VALUE}V | inputvoltage=$VALUE;$WARNVAL;$CRITVAL"
+                        exit 1
+                fi
+        fi
+        echo "OK - Input Voltage:: ${VALUE}V | inputvoltage=$VALUE;$WARNVAL;$CRITVAL"
+        ;;
 esac
 
 exit 0
