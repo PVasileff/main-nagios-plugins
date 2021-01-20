@@ -58,7 +58,7 @@
 #        service_description     UPS - YOUR_UPS_NAME - Load
 #        check_interval          1
 #        max_check_attempts      5
-#        check_command           check_custom_apcupsd!pve!60!70!loadpct
+#        check_command           check_custom_apcupsd!IP-OF-REMOTE-APCUPSD-DAEMON!60!70!loadpct
 #}
 #define service {
 # INPUT VOLTAGE
@@ -68,9 +68,17 @@
 #        service_description     UPS - YOUR_UPS_NAME - Input Voltage
 #        check_interval          1
 #        max_check_attempts      5
-#        check_command           check_custom_apcupsd!pve!220!210!linev
+#        check_command           check_custom_apcupsd!IP-OF-REMOTE-APCUPSD-DAEMON!220!210!linev
 #}
-
+# define service {
+# TEMPERATURE
+#
+#        use                     local-service
+#        host_name               localhost
+#        service_description     UPS - YOUR_UPS_NAME - Temperature
+#        check_interval          1
+#        max_check_attempts      5
+#        check_command           check_custom_apcupsd!IP-OF-REMOTE-APCUPSD-DAEMON!35!40!itemp
 
 APCACCESS=/sbin/apcaccess
 
@@ -166,14 +174,16 @@ if [ $? -ne 0 ]; then
 	exit 3
 fi
 
-VALUE=`$APCACCESS status $HOSTNAME:$PORT | grep -i ^$ARG | \
-	sed 's/.*:  *\([0-9.][0-9.]*\)[^0-9.].*/\1/'`
+VALUE=`$APCACCESS status $HOSTNAME:$PORT | grep -i ^$ARG | sed 's/.*:  *\([0-9.][0-9.]*\)[^0-9.].*/\1/'`
+
 if [ "$VALUE" != "0" ]; then
 	VALUE=`echo $VALUE | sed 's/^0*//'`
 fi
+
 ROUNDED=`echo $VALUE | sed 's/\..*//'`
 
 case "$ARG" in
+# Battery Charge
 bcharge)
 	if [ "$CRITVAL" != "" ]; then
 		if [ $ROUNDED -lt $CRITVAL ]; then
@@ -189,6 +199,7 @@ bcharge)
 	fi
 	echo "OK - Battery Charge: ${VALUE}% | bcharge=$VALUE;$WARNVAL;$CRITVAL"
 	;;
+# Temperature
 itemp)
 	if [ "$CRITVAL" != "" ]; then
 		if [ $ROUNDED -ge $CRITVAL ]; then
@@ -204,6 +215,7 @@ itemp)
 	fi
 	echo "OK - Internal Temperature: $VALUE C | itemp=$VALUE;$WARNVAL;$CRITVAL"
 	;;
+# Load
 loadpct)
 	if [ "$CRITVAL" != "" ]; then
 		if [ $ROUNDED -ge $CRITVAL ]; then
@@ -219,6 +231,7 @@ loadpct)
 	fi
 	echo "OK - Load: ${VALUE}% | loadpct=$VALUE;$WARNVAL;$CRITVAL"
 	;;
+# Time left on battery
 timeleft)
 	if [ "$CRITVAL" != "" ]; then
 		if [ $ROUNDED -lt $CRITVAL ]; then
@@ -234,6 +247,7 @@ timeleft)
 	fi
 	echo "OK - Time Left: $VALUE Minutes | timeleft=$VALUE;$WARNVAL;$CRITVAL"
 	;;
+# Input voltage
 linev)
         if [ "$CRITVAL" != "" ]; then
                 if [ $ROUNDED -lt $CRITVAL ]; then
