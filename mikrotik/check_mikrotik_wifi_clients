@@ -61,106 +61,106 @@ authpassword=""
 #Process parameters
 while test -n "$1"; do
         case "$1" in
-                        --help)
-                            print_help
-                            exit $STATE_OK
-                            ;;
-                        -h)
-                            print_help
-                            exit $STATE_OK
-                            ;;
-                        --version)
-                            print_revision $PROGNAME $REVISION
-                            exit $STATE_OK
-                            ;;
-                        -V)
-                            print_revision $PROGNAME $REVISION
-                            exit $STATE_OK
-                            ;;
-                        -w)
-                            warning=$2
-                            shift
-                            ;;
-                        --warning*)
-                            warning=" $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                            -c)
-                            critical=$2
-                            shift
-                            ;;
-                            --critical*)
-                            critical=" $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -H)
-                            Host=" $2"
-                            shift
-                            ;;
-                        --hostname*)
-                            Host=" $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -C)
-                            community=" -c $2"
-                            shift
-                            ;;
-                        --community*)
-                            community=" -c $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -P)
-                            protocol=" -v $2"
-                            shift
-                            ;;
-                        --protocol*)
-                            protocol=" -v $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -U)
-                            secname=" -u $2"
-                            shift
-                            ;;
-                        --secname*)
-                            secname=" -u $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -a)
-                            authproto=" -a $2"
-                            shift
-                            ;;
-                        --authproto*)
-                            authproto=" -a $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -x)
-                            privproto=" -x $2"
-                            shift
-                            ;;
-                        --privproto*)
-                            privproto=" -x $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -A)
-                            authpassword=" -A $2"
-                            shift
-                            ;;
-                        --authpassword*)
-                            authpassword=" -A $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -X)
-                            privpasswd=" -X $2"
-                            shift
-                            ;;
-                        --privpassword*)
-                            privpasswd=" -X $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        -L)
-                            seclevel=" -l $2"
-                            shift
-                            ;;
-                        --seclevel*)
-                            seclevel=" -l $(echo $1 | cut -d "=" -f 2)"
-                            ;;
-                        *)
-                            echo "Unknown argument: $1"
-                            echo "Usage: $PROGNAME --help"
-                            exit $STATE_UNKNOWN
-                            ;;
-        esac
-        shift
+			--help)
+			    print_help
+			    exit $STATE_OK
+			    ;;
+			-h)
+			    print_help
+			    exit $STATE_OK
+			    ;;
+			--version)
+			    print_revision $PROGNAME $REVISION
+			    exit $STATE_OK
+			    ;;
+			-V)
+			    print_revision $PROGNAME $REVISION
+			    exit $STATE_OK
+			    ;;
+			-w)
+			    warning=$2
+			    shift
+			    ;;
+			--warning*)
+			    warning=" $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			    -c)
+			    critical=$2
+			    shift
+			    ;;
+			    --critical*)
+			    critical=" $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-H)
+			    Host=" $2"
+			    shift
+			    ;;
+			--hostname*)
+			    Host=" $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-C)
+			    community=" -c $2"
+			    shift
+			    ;;
+			--community*)
+			    community=" -c $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-P)
+			    protocol=" -v $2"
+			    shift
+			    ;;
+			--protocol*)
+			    protocol=" -v $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-U)
+			    secname=" -u $2"
+			    shift
+			    ;;
+			--secname*)
+			    secname=" -u $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-a)
+			    authproto=" -a $2"
+			    shift
+			    ;;
+			--authproto*)
+			    authproto=" -a $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-x)
+			    privproto=" -x $2"
+			    shift
+			    ;;
+			--privproto*)
+			    privproto=" -x $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-A)
+			    authpassword=" -A $2"
+			    shift
+			    ;;
+			--authpassword*)
+			    authpassword=" -A $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-X)
+			    privpasswd=" -X $2"
+			    shift
+			    ;;
+			--privpassword*)
+			    privpasswd=" -X $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			-L)
+			    seclevel=" -l $2"
+			    shift
+			    ;;
+			--seclevel*)
+			    seclevel=" -l $(echo $1 | cut -d "=" -f 2)"
+			    ;;
+			*)
+			    echo "Unknown argument: $1"
+			    echo "Usage: $PROGNAME --help"
+			    exit $STATE_UNKNOWN
+			    ;;
+	esac
+	shift
 done
 
 #Host is not optional
@@ -211,3 +211,4 @@ else
         #echo OK
         exit $STATE_OK
 fi
+

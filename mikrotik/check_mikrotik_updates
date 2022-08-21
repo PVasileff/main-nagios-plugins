@@ -13,7 +13,7 @@ REVISION=`echo '$Revision: 2.0 $' | sed -e 's/[^0-9.]//g'`
 . $PROGPATH/utils.sh
 
 print_usage() {
-    echo -e "Usage: $PROGNAME -H <ip_address> [-w <number>] [-c <number>] [-C <community>]
+    echo -e "Usage: $PROGNAME -H <ip_address> [-C <community>]
 [-P <snmp version>] [-U <username>] [-L <secLevel>] [-a <authproto>]
 [-x <privproto>] [-A <authpassword>] [-X <privpassword>]"
     echo -e "\nOptions:"
@@ -186,7 +186,7 @@ major_version=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"' | 
 # Checking Mikrotik Website for new version release
 if ! routeros_available=$(curl -fsA "check_routeros-upgrade" "$routeros_url/LATEST.$param_version"); then
 	echo "Could not reach the MikroTik server to check the latest version!"
-	exit 1
+	exit 4
 fi
 
 routeros_available_version=$(echo "$routeros_available" | cut -d " " -f 1)
