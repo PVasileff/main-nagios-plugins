@@ -1,6 +1,7 @@
 #!/bin/bash
 
-## Fork of https://github.com/customink/nagios-nrpe-check_glusterfs/
+## Fork of Custom Ink
+## https://github.com/customink/nagios-nrpe-check_glusterfs/
 
 ## Fork of MarkR’s GlusterFS-checks at:
 ## http://exchange.nagios.org/directory/Plugins/System-Metrics/File-System/GlusterFS-checks/details
@@ -37,22 +38,12 @@ PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
 REVISION="1.0.1"
 
 ##. $PROGPATH/utils.sh - included in lines below
-
+# Nagios states:
 STATE_OK=0
 STATE_WARNING=1
 STATE_CRITICAL=2
 STATE_UNKNOWN=3
 STATE_DEPENDENT=4
-
-print_revision() {
-        echo "$1 v$2 (nagios-plugins 2.4.5)"
-        printf '%b' "The nagios plugins come with ABSOLUTELY NO WARRANTY. You may redistribute\ncopies of the plugins under the terms of the GNU General Public License.\nFor more information about these matters, see the file named COPYING.\n"
-}
-
-support() {
-        printf '%b' "Send email to help@nagios-plugins.org if you have questions regarding use\nof this software. To submit patches or suggest improvements, send email to\ndevel@nagios-plugins.org. Please include version information with all\ncorrespondence (when possible, use output from the --version option of the\nplugin itself).\n"
-}
-
 
 # parse command line
 usage () {
