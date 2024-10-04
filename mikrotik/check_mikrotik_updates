@@ -7,21 +7,21 @@
 
 PROGNAME=`basename $0`
 PROGPATH=`dirname $0`
-REVISION=`echo '$Revision: 2.0 $' | sed -e 's/[^0-9.]//g'`
-
+REVISION=`echo '$Revision: 3.0 $' | sed -e 's/[^0-9.]//g'`
 
 . $PROGPATH/utils.sh
 
 print_usage() {
-    echo -e "Usage: $PROGNAME -H <ip_address> [-C <community>]
+    echo -e "Usage: $PROGNAME -H <ip_address> [-C <community>] [-r <release>]
 [-P <snmp version>] [-U <username>] [-L <secLevel>] [-a <authproto>]
 [-x <privproto>] [-A <authpassword>] [-X <privpassword>]"
     echo -e "\nOptions:"
     echo -e " -V, --version\n    Print version information"
     echo -e " -h, --help\n    Print detailed help screen"
-    echo -e " -H, --hostname=ADDRESS\n    Host name od IP address"
+    echo -e " -H, --hostname=ADDRESS\n    Host name or IP address"
     echo -e " -C, --community=STRING\n    Optional community string for SNMP communication (default is public)"
-    echo -e " -P, --protocol=[1|2c|3]\n    SNMP protocol version(default is 2c)"
+    echo -e " -r, --release=[stable|lts]\n    Release type (stable or lts) - required"
+    echo -e " -P, --protocol=[1|2c|3]\n    SNMP protocol version (default is 2c)"
     echo -e " -L, --seclevel=[noAuthNoPriv|authNoPriv|authPriv]\n    SNMPv3 securityLevel"
     echo -e " -a, --authproto=[MD5|SHA]\n    SNMPv3 auth proto"
     echo -e " -x, --privproto=[DES|AES]\n    SNMPv3 priv proto"
@@ -38,14 +38,14 @@ http://net-snmp.sourceforge.net before you can use this plugin."
 print_help() {
     print_revision $PROGNAME $REVISION
     echo ""
-    echo "This plugin checks current mikrotik routeros version and compare with last stable released version on mikrotik website"
+    echo "This plugin checks current mikrotik routeros version and compares with last stable or long-term released version on MikroTik website"
     echo ""
     print_usage
     echo ""
     support
 }
 
-#Set default values
+# Set default values
 community=""
 protocol=""
 secname=""
@@ -53,106 +53,110 @@ authproto=""
 privproto=""
 privpasswd=""
 authpassword=""
+release=""
 
-#Process parameters
+# Process parameters
 while test -n "$1"; do
-	case "$1" in
-			--help)
-			    print_help
-			    exit $STATE_OK
-			    ;;
-			-h)
-			    print_help
-			    exit $STATE_OK
-			    ;;
-			--version)
-			    print_revision $PROGNAME $REVISION
-			    exit $STATE_OK
-			    ;;
-			-V)
-			    print_revision $PROGNAME $REVISION
-			    exit $STATE_OK
-			    ;;
-			-H)
-			    Host=" $2"
-			    shift
-			    ;;
-			--hostname*)
-			    Host=" $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-C)
-			    community=" -c $2"
-			    shift
-			    ;;
-			--community*)
-			    community=" -c $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-P)
-			    protocol=" -v $2"
-			    shift
-			    ;;
-			--protocol*)
-			    protocol=" -v $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-U)
-			    secname=" -u $2"
-			    shift
-			    ;;
-			--secname*)
-			    secname=" -u $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-a)
-			    authproto=" -a $2"
-			    shift
-			    ;;
-			--authproto*)
-			    authproto=" -a $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-x)
-			    privproto=" -x $2"
-			    shift
-			    ;;
-			--privproto*)
-			    privproto=" -x $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-A)
-			    authpassword=" -A $2"
-			    shift
-			    ;;
-			--authpassword*)
-			    authpassword=" -A $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-X)
-			    privpasswd=" -X $2"
-			    shift
-			    ;;
-			--privpassword*)
-			    privpasswd=" -X $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-			-L)
-			    seclevel=" -l $2"
-			    shift
-			    ;;
-			--seclevel*)
-			    seclevel=" -l $(echo $1 | cut -d "=" -f 2)"
-			    ;;
-
-			*)
-			    echo "Unknown argument: $1"
-			    echo "Usage: $PROGNAME --help"
-			    exit $STATE_UNKNOWN
-			    ;;
-	esac
-	shift
+        case "$1" in
+                        --help)
+                            print_help
+                            exit $STATE_OK
+                            ;;
+                        -h)
+                            print_help
+                            exit $STATE_OK
+                            ;;
+                        --version)
+                            print_revision $PROGNAME $REVISION
+                            exit $STATE_OK
+                            ;;
+                        -V)
+                            print_revision $PROGNAME $REVISION
+                            exit $STATE_OK
+                            ;;
+                        -H)
+                            Host=" $2"
+                            shift
+                            ;;
+                        --hostname*)
+                            Host=" $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -C)
+                            community=" -c $2"
+                            shift
+                            ;;
+                        --community*)
+                            community=" -c $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -P)
+                            protocol=" -v $2"
+                            shift
+                            ;;
+                        --protocol*)
+                            protocol=" -v $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -U)
+                            secname=" -u $2"
+                            shift
+                            ;;
+                        --secname*)
+                            secname=" -u $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -a)
+                            authproto=" -a $2"
+                            shift
+                            ;;
+                        --authproto*)
+                            authproto=" -a $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -x)
+                            privproto=" -x $2"
+                            shift
+                            ;;
+                        --privproto*)
+                            privproto=" -x $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -A)
+                            authpassword=" -A $2"
+                            shift
+                            ;;
+                        --authpassword*)
+                            authpassword=" -A $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -X)
+                            privpasswd=" -X $2"
+                            shift
+                            ;;
+                        --privpassword*)
+                            privpasswd=" -X $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -L)
+                            seclevel=" -l $2"
+                            shift
+                            ;;
+                        --seclevel*)
+                            seclevel=" -l $(echo $1 | cut -d "=" -f 2)"
+                            ;;
+                        -r|--release)
+                            release=$2
+                            shift
+                            ;;
+                        *)
+                            echo "Unknown argument: $1"
+                            echo "Usage: $PROGNAME --help"
+                            exit $STATE_UNKNOWN
+                            ;;
+        esac
+        shift
 done
 
-#Host is not optional
-if [ "$Host" == "" ]; then
+# Host and release are mandatory
+if [ "$Host" == "" ] || [ "$release" == "" ]; then
+    echo "Error: Host and release type (stable or lts) are required."
     exit $STATE_UNKNOWN
 fi
 
-
-#Set default values
+# Set default values
 if [ "$protocol" == "" ]; then
     protocol=" -v 2c"
     community=" -c public"
@@ -170,59 +174,31 @@ fi
 
 rbosmodel=$(echo $routerosmodel | cut -d ':' -f2 | tr -d '"')
 
-if [ -z "${ROUTEROS_UPDATEURL}" ]; then
-    routeros_url="https://download.mikrotik.com/routeros"
+# Check release type and get corresponding version from MikroTik website
+if [ "$release" == "stable" ]; then
+    routeros_available_version=$(curl -s https://mikrotik.com/download/changelogs | grep "#c-stable" -A1 | grep -v "#c-stable" | head -n1 | sed -e 's/<[^>]*>//g' | xargs)
+elif [ "$release" == "lts" ]; then
+    routeros_available_version=$(curl -s https://mikrotik.com/download/changelogs | grep "#c-longTerm" -A1 | grep -v "#c-longTerm" | head -n1 | sed -e 's/<[^>]*>//g' | xargs)
 else
-    routeros_url="${ROUTEROS_UPDATEURL}"
+    echo "Error: Invalid release type specified. Use 'stable' or 'lts'."
+    exit $STATE_UNKNOWN
 fi
-
 
 routeros_installed=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"')
-## - TESTS -routeros_installed="6.45.3"
-param_version=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"' | cut -d '.' -f1)
-## - TESTS - param_version=$(echo $routeros_installed | cut -d '.' -f1)
-major_version=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"' | cut -d '.' -f2)
+routeros_installed_perfdata=$(echo $firmwareversion | awk '/STRING/ {print $4}' | tr -d '"' | cut -d '.' -f1,2)
 
-# Checking Mikrotik Website for new version release
-if ! routeros_available=$(curl -fsA "check_routeros-upgrade" "$routeros_url/LATEST.$param_version"); then
-	echo "Could not reach the MikroTik server to check the latest version!"
-	exit 4
-fi
-
-routeros_available_version=$(echo "$routeros_available" | cut -d " " -f 1)
-routeros_available_releasedate=$(echo "$routeros_available" | cut -d " " -f 2)
-
-# Compare Latest version from MikrkoTik Website with version installed on device
-if [ "$routeros_available_version" = "$routeros_installed" ]; then
-	echo "Your $rbosmodel version: $routeros_available_version is up to date (release: $(date -u -d @"$routeros_available_releasedate" +'%b-%d')) | firmware=$major_version"
-	exit 0
+# Compare installed version with available version using sort -V
+if [ "$(printf '%s\n' "$routeros_installed" "$routeros_available_version" | sort -V | head -n1)" == "$routeros_installed" ] && [ "$routeros_installed" != "$routeros_available_version" ]; then
+    # If installed RouterOS version is old than reported on site
+    echo "Your $rbosmodel version: $routeros_installed is upgradable to $release version $routeros_available_version. | firmware=$routeros_installed_perfdata"
+    exit 1
+elif [ "$routeros_installed" == "$routeros_available_version" ]; then
+    # Ако версиите са еднакви
+    echo "Your $rbosmodel version: $routeros_installed is up to date with $release version $routeros_available_version. | firmware=$routeros_installed_perfdata"
+    exit 0
 else
-	 # read the changelog from MikroTik website
-        if ! changelog=$(curl -fsA "check_routeros-upgrade" "$routeros_url/$routeros_available_version/CHANGELOG"); then
-            echo "Could not reach the MikroTik WebSite to read the changelog!"
-            exit 1
-        fi
-
-        changelog_lines=$(echo "$changelog" | grep -n "What" | head -n 2 | tail -n 1 | cut -d ":" -f 1)
-
-        changelog_impfix=$(echo "$changelog" | head -n "$changelog_lines" | grep -c '!)')
-        changelog_avgfix=$(echo "$changelog" | head -n "$changelog_lines" | grep -c '[*])')
-
-        if [ "$changelog_impfix" -ne 0 ] && [ "$changelog_avgfix" -ne 0 ]; then
-            fix_text="$changelog_impfix important fixes, $changelog_avgfix average fixes"
-            fix_result=2
-        elif [ "$changelog_impfix" -ne 0 ]; then
-            fix_text="$changelog_impfix important fixes"
-            fix_result=2
-        elif [ "$changelog_avgfix" -ne 0 ]; then
-            fix_text="$changelog_avgfix average fixes"
-            fix_result=1
-        fi
-
-        echo "Your $rbosmodel version: $routeros_installed is upgradable to $routeros_available_version ($fix_text) | firmware=$major_version"
-        exit $fix_result
-    fi
-else
-    echo "$error"
+    # If installed RouterOS version is newer than reported on site
+    echo "Warning: Your $rbosmodel version: $routeros_installed is higher than the $release version $routeros_available_version. Check if the correct release channel is specified. | firmware=$routeros_installed_perfdata"
     exit 2
 fi
+
