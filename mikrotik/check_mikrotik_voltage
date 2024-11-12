@@ -19,6 +19,23 @@ print_usage() {
     echo -e "Usage: $PROGNAME -H <ip_address> [-w <low voltage warning>] [-c <low voltage critical>] [-u <high voltage warning>] [-v <high voltage critical>] [-C <community>]
 [-P <snmp version>] [-U <username>] [-L <secLevel>] [-a <authproto>]
 [-x <privproto>] [-A <authpassword>] [-X <privpassword>]"
+    echo -e "\nOptions:"
+    echo -e " -V, --version\n    Print version information"
+    echo -e " -h, --help\n    Print detailed help screen"
+    echo -e " -H, --hostname=ADDRESS\n    Host name or IP address"
+    echo -e " -w, --warning=INTEGER\n    Low Warning voltage treshold (default 234 (for 24V))"
+    echo -e " -c, --critical=INTEGER\n    Low Critical voltage treshold (default 232 (for 24V))"
+    echo -e " -u, --highwarning=INTEGER\n    High Warning voltage treshold (default 250 (for 24V))"
+    echo -e " -v, --highcritical=INTEGER\n    High Critical voltage treshold (default 255 (for 24V))"
+    echo -e " -C, --community=STRING\n    Optional community string for SNMP communication (default is public)"
+    echo -e " -P, --protocol=[1|2c|3]\n    SNMP protocol version(default is 2c)"
+    echo -e " -L, --seclevel=[noAuthNoPriv|authNoPriv|authPriv]\n    SNMPv3 securityLevel"
+    echo -e " -a, --authproto=[MD5|SHA]\n    SNMPv3 auth proto"
+    echo -e " -x, --privproto=[DES|AES]\n    SNMPv3 priv proto"
+    echo -e " -U, --secname=USERNAME\n    SNMPv3 username"
+    echo -e " -A, --authpassword=PASSWORD\n    SNMPv3 authentication password"
+    echo -e " -X, --privpassword=PASSWORD\n    SNMPv3 privacy password"
+
 
 echo -e "\nThis plugin uses the 'snmpget' command included with the NET-SNMP package.
 if you don't have the package installed, you will need to download it from
